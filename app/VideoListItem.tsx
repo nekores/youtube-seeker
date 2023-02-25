@@ -67,7 +67,7 @@ export default function VideoListItem({
   //   fetchData();
   // }, []);
 
-  const truncateText = (str, no_words) => {
+  const truncateText = (str: any, no_words: any) => {
     return str.split(" ").splice(0, no_words).join(" ");
   };
   return (
