@@ -2,16 +2,13 @@ import {
   Button,
   Card,
   CardBody,
-  CardFooter,
   Heading,
-  HStack,
   Image,
   Stack,
   Tag,
   TagLabel,
   Text,
 } from "@chakra-ui/react";
-import { PropaneSharp } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import playlist from "./data.json";
 
