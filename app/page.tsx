@@ -8,7 +8,6 @@ import {
   Button,
   Flex,
   Box,
-  Center,
   InputGroup,
   Input,
   InputRightElement,
@@ -18,18 +17,25 @@ import {
   Divider,
   Spinner,
   Text,
+  useDisclosure,
 } from "@chakra-ui/react";
+import { mediaQueryHook } from "utils/mediaQueryHook";
+import { ModalComp } from "app/components/modal/";
 
 export default function Home() {
-  const [displayPlayList, setDisplayPlayList] = useState(true);
-  const [currentVideoId, setCurrentVideoId] = useState("");
-  const [currentVideoSeek, setCurrentVideoSeek] = useState("3");
-  const [filterPlaylist, setFilterPlaylist] = useState([]);
-  const [searchLoader, setSearchLoader] = useState(false);
-  const [inputSearchVal, setInputSearchVal] = useState("");
-  const [currentVideo, setCurrentVideo] = useState({});
+  const [displayPlayList, setDisplayPlayList] = useState<boolean>(true);
+  const [currentVideoId, setCurrentVideoId] = useState<string>("");
+  const [currentVideoSeek, setCurrentVideoSeek] = useState<string>("3");
+  const [filterPlaylist, setFilterPlaylist] = useState<Array<Object>>([]);
+  const [searchLoader, setSearchLoader] = useState<Boolean>(false);
+  const [inputSearchVal, setInputSearchVal] = useState<string>("");
+  const [currentVideo, setCurrentVideo] = useState<Object>({});
 
-  console.log(" **** DATA *** ", playlist);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // console.log(" **** DATA *** ", playlist);
+  const { isMdUp } = mediaQueryHook();
+
   function showSearchResults(playlist: number) {
     setDisplayPlayList(true);
   }
@@ -42,7 +48,8 @@ export default function Home() {
     setCurrentVideoId(id);
     setCurrentVideo(currentVideoo);
     setCurrentVideoSeek(seek_time);
-    console.log(" from child", currentVideoo);
+    onOpen();
+    // console.log(" from child", currentVideoo);
   }
 
   useEffect(() => {
@@ -51,7 +58,7 @@ export default function Home() {
     setFilterPlaylist(playlist);
   }, []);
 
-  const searchFnc = (e) => {
+  const searchFnc = (e: any) => {
     const input = e.target.value.toLowerCase();
     if (e.key === "Enter") {
       searchButtonFnc();
@@ -68,9 +75,6 @@ export default function Home() {
   };
 
   const timeOut = () => {
-    setTimeout(() => {
-      return "Not Found";
-    }, 500);
     return (
       <Box
         height="100%"
@@ -102,24 +106,27 @@ export default function Home() {
 
       <Divider orientation="horizontal" mb={0} />
 
-      <Flex color="white">
-        <Box flex="1" bg="tomato"></Box>
-        <Center w="300px"></Center>
-      </Flex>
-      <Grid
-        templateColumns="repeat(12, 1fr)"
-        gap={2}
-        m={5}
-      >
-        <GridItem rowSpan={1} colSpan={7}>
-          <YouTubeVideo
-            video_id={currentVideoId}
-            currentVideo={currentVideo}
-            seek_time={currentVideoSeek}
-          />
+      <Grid templateColumns="repeat(12, 1fr)" gap={2} m={5}>
+        <GridItem colSpan={[12, 12, 12, 12, 6, 7]}>
+          {isMdUp ? (
+            <YouTubeVideo
+              video_id={currentVideoId}
+              currentVideo={currentVideo}
+              seek_time={currentVideoSeek}
+            />
+          ) : (
+            <ModalComp isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
+              <YouTubeVideo
+                video_id={currentVideoId}
+                currentVideo={currentVideo}
+                seek_time={currentVideoSeek}
+              />
+            </ModalComp>
+          )}
         </GridItem>
-        <GridItem colSpan={5}>
-          <Box maxW={"100%"} margin="auto" mb={5}>
+
+        <GridItem colSpan={[12, 12, 12, 12, 6, 5]}>
+          <Box maxW={"100%"} margin="auto" mb={2}>
             <InputGroup size="md">
               <Input
                 pr="4.5rem"
@@ -128,12 +135,7 @@ export default function Home() {
                 onKeyDown={searchFnc}
               />
               <InputRightElement width="4.5rem" mr={1.5}>
-                <Button
-                  h="1.75rem"
-                  size="sm"
-                  onClick={() => null}
-                  onClick={searchButtonFnc}
-                >
+                <Button h="1.75rem" size="sm" onClick={searchButtonFnc}>
                   Search
                 </Button>
               </InputRightElement>
@@ -165,9 +167,10 @@ export default function Home() {
               </Box>
             ) : null}
           </Box>
+
           <Box className="video-responsive" maxH={"100vh"} overflow="auto">
             {displayPlayList && filterPlaylist?.length > 0
-              ? filterPlaylist?.map((playlistId) => {
+              ? filterPlaylist?.map((playlistId: any) => {
                   return (
                     <VideoListItem
                       key={playlistId.video_id}

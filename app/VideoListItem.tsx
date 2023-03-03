@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   CardBody,
   Heading,
@@ -8,18 +7,23 @@ import {
   Tag,
   TagLabel,
   Text,
+  Icon,
+  Box,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { MdPlayCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 import playlist from "./data.json";
 
 // https://youtube.googleapis.com/youtube/v3/videos?part=contentDetails&part=id&part=snippet&id=16L2nuekLS4&key=AIzaSyCoXyAV05fYlv70Ajs71Owiub0xIZ0Xd8M
 type VideoListItemProps = {
   video_id: string;
   seek_time: string;
-  handleOnClick: (video_id: string, seek_time: string) => void;
-  title: string;
+  handleOnClick: (
+    video_id: string,
+    seek_time: string,
+    currentVideo: any
+  ) => void;
   isActive: Boolean;
-  currentVideo: Object;
+  currentVideo: any;
 };
 
 export async function generateStaticParams() {
@@ -29,10 +33,6 @@ export async function generateStaticParams() {
   }));
 }
 
-type SnippetType = {
-  title?: string;
-  description?: string;
-};
 export default function VideoListItem({
   video_id,
   seek_time,
@@ -40,10 +40,6 @@ export default function VideoListItem({
   isActive,
   currentVideo,
 }: VideoListItemProps) {
-  const [snippet, setSnippet] = useState<SnippetType>({
-    title: "First title",
-    description: "Some description",
-  });
   // const YOUTUBE_KEY = process.env.NEXT_YOUTUBE_KEY;
   // const YOUTUBE_KEY = "AIzaSyCoXyAV05fYlv70Ajs71Owiub0xIZ0Xd8M";
 
@@ -73,22 +69,65 @@ export default function VideoListItem({
   return (
     <>
       <Card
-        maxH="300px"
         direction={{ base: "column", sm: "row" }}
         overflow="hidden"
         size="lg"
-        variant={isActive ? "filled" : "outline"}
+        variant="outline"
+        bg={isActive ? "#edf2f7" : "none"}
         borderRadius={0}
         cursor="pointer"
         onClick={() => handleOnClick(video_id, seek_time, currentVideo)}
+        display="flex"
+        alignItems="center"
       >
-        <Image
-          objectFit="cover"
-          backgroundPosition="center"
-          maxW={{ base: "100%", sm: "300px" }}
-          src="https://images.unsplash.com/photo-1667489022797-ab608913feeb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHw5fHx8ZW58MHx8fHw%3D&auto=format&fit=crop&w=800&q=60"
-          alt="Caffe Latte"
-        />
+        <Box position="relative">
+          <Image
+            maxHeight="200px"
+            backgroundPosition="center"
+            maxW={{ base: "100%", sm: "300px" }}
+            src={currentVideo?.video_thumbnail}
+            alt={currentVideo?.title}
+          />
+          <Box
+            position="absolute"
+            left="0"
+            top="0"
+            right="0"
+            bottom="0"
+            margin="auto"
+            bg={isActive ? "#00000050" : "#00000099"}
+            width={"100%"}
+            height={"100%"}
+          />
+          {isActive ? (
+            <Icon
+              as={MdPauseCircleOutline}
+              position="absolute"
+              left="0"
+              top="0"
+              right="0"
+              bottom="0"
+              margin="auto"
+              color={"white"}
+              width={"70px"}
+              height={"70px"}
+            />
+          ) : (
+            <Icon
+              color={"white"}
+              as={MdPlayCircleOutline}
+              position="absolute"
+              boxSize={20}
+              left="0"
+              top="0"
+              right="0"
+              bottom="0"
+              margin="auto"
+              width={"70px"}
+              height={"70px"}
+            />
+          )}
+        </Box>
 
         <Stack>
           <CardBody>
@@ -99,11 +138,11 @@ export default function VideoListItem({
               colorScheme="green"
               mb={2}
             >
-              <TagLabel>Occurences 12</TagLabel>
+              <TagLabel>Occurences {currentVideo?.occourances}</TagLabel>
             </Tag>
             <Heading size="md">{currentVideo?.title}</Heading>
 
-            <Text py="2">{truncateText(currentVideo?.desc, 47)}...</Text>
+            <Text py="2">{truncateText(currentVideo?.desc, 48)}...</Text>
           </CardBody>
         </Stack>
       </Card>
