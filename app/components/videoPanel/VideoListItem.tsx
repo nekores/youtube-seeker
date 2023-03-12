@@ -1,3 +1,5 @@
+import { useState } from "react";
+import playlist from "../../data.json";
 import {
   Card,
   CardBody,
@@ -10,10 +12,10 @@ import {
   Icon,
   Box,
 } from "@chakra-ui/react";
-import { MdPlayCircleOutline, MdPauseCircleOutline } from "react-icons/md";
-import playlist from "./data.json";
 
-// https://youtube.googleapis.com/youtube/v3/videos?part=contentDetails&part=id&part=snippet&id=16L2nuekLS4&key=AIzaSyCoXyAV05fYlv70Ajs71Owiub0xIZ0Xd8M
+//https://www.googleapis.com/youtube/v3/videos?id=nxtJb4awY3Q&key=[api-key]&part=snippet,contentDetails,status
+import { MdPlayCircleOutline, MdPauseCircleOutline } from "react-icons/md";
+import { SnippetType } from "../../types";
 type VideoListItemProps = {
   video_id: string;
   seek_time: string;
@@ -24,11 +26,12 @@ type VideoListItemProps = {
   ) => void;
   isActive: Boolean;
   currentVideo: any;
+  embeddable: any;
 };
 
 export async function generateStaticParams() {
   return playlist.map((video) => ({
-    vide_id: video.video_id,
+    video_id: video.video_id,
     seek_time: video.seek_time,
   }));
 }
@@ -39,33 +42,21 @@ export default function VideoListItem({
   handleOnClick,
   isActive,
   currentVideo,
+  embeddable,
 }: VideoListItemProps) {
   // const YOUTUBE_KEY = process.env.NEXT_YOUTUBE_KEY;
-  // const YOUTUBE_KEY = "AIzaSyCoXyAV05fYlv70Ajs71Owiub0xIZ0Xd8M";
+  const YOUTUBE_KEY = "AIzaSyD4SATJMYpvr2dyg5oefYDFzlNfId-nKek";
 
-  // async function fetchData() {
-  //   const url = `https://youtube.googleapis.com/youtube/v3/videos?part=contentDetails&part=id&part=snippet&id=${video_id}&key=${YOUTUBE_KEY}`;
-  //   console.log(" URL ", url);
-  //   const data = await fetch(url);
-  //   const res = await data.json();
-  //   console.log(" Print Resp ", res);
-  //   console.log(
-  //     " Print Resp YES",
-  //     res.items && res.items[0] && res.items[0].snippet
-  //   );
-  //   res.items && res.items[0] && res.items[0].snippet
-  //     ? setSnippet(res.items[0].snippet)
-  //     : null;
-  // }
-  // useEffect(() => {
-  //   // Update the document title using the browser API
-
-  //   fetchData();
-  // }, []);
 
   const truncateText = (str: any, no_words: any) => {
     return str.split(" ").splice(0, no_words).join(" ");
   };
+
+  function handleOnClickItem() { 
+
+    // Pass click event to parent
+     handleOnClick(video_id, seek_time, currentVideo);
+  }
   return (
     <>
       <Card
@@ -76,7 +67,7 @@ export default function VideoListItem({
         bg={isActive ? "#edf2f7" : "none"}
         borderRadius={0}
         cursor="pointer"
-        onClick={() => handleOnClick(video_id, seek_time, currentVideo)}
+        onClick={handleOnClickItem}
         display="flex"
         alignItems="center"
       >
@@ -85,7 +76,7 @@ export default function VideoListItem({
             maxHeight="200px"
             backgroundPosition="center"
             maxW={{ base: "100%", sm: "300px" }}
-            src={currentVideo?.video_thumbnail}
+            src={currentVideo?.thumbnails?.medium?.url}
             alt={currentVideo?.title}
           />
           <Box
@@ -140,9 +131,18 @@ export default function VideoListItem({
             >
               <TagLabel>Occurences {currentVideo?.occourances}</TagLabel>
             </Tag>
-            <Heading size="md">{currentVideo?.title}</Heading>
-
-            <Text py="2">{truncateText(currentVideo?.desc, 48)}...</Text>
+            <Tag
+              size="md"
+              borderRadius="full"
+              variant="solid"
+              colorScheme="red"
+              mb={2}
+              ml={1}
+            >
+              <TagLabel>Embedable : {embeddable ? "true" : "false"}</TagLabel>
+            </Tag>
+            <Heading size="md">{currentVideo.title}</Heading>
+            <Text py="2">{truncateText(currentVideo?.description, 30)}...</Text>
           </CardBody>
         </Stack>
       </Card>

@@ -3,21 +3,23 @@ import { useEffect, useState } from "react";
 import ReactPlayer from "react-player";
 
 type YouTubeVideoProps = {
-  video_id: string;
   seek_time: string;
-  currentVideo: any;
+  playing: boolean;
+  setPlaying: (playing: boolean) => void;
+  currentVideo: any; // TODO define current video
 };
 
 export default function YouTubeVideo({
-  video_id,
   seek_time,
   currentVideo,
+  playing,
+  setPlaying,
 }: YouTubeVideoProps) {
-  const [loader, setLoader] = useState(true);
+  const [loader, setLoader] = useState(false);
 
   useEffect(() => {
     setLoader(true);
-  }, [video_id]);
+  }, [currentVideo]);
 
   return (
     <>
@@ -44,11 +46,11 @@ export default function YouTubeVideo({
           position: "relative",
         }}
       >
-        {video_id ? (
+        {currentVideo?.video_id ? (
           <ReactPlayer
             onReady={() => setLoader(false)}
-            playing
-            url={`https://www.youtube.com/embed/${video_id}`}
+            url={`https://www.youtube.com/embed/${currentVideo?.video_id}`}
+            playing={playing}
             config={{
               youtube: {
                 playerVars: {
@@ -62,6 +64,14 @@ export default function YouTubeVideo({
             }}
             controls={true}
             width="100%"
+            onPause={() => {
+              console.log("onPause");
+              setPlaying(false);
+            }}
+            onPlay={() => {
+              console.log("onPlay");
+              setPlaying(true);
+            }}
             // height="100%"
             style={{ minHeight: "530px" }}
           />
@@ -89,9 +99,7 @@ export default function YouTubeVideo({
         ) : null}
       </Box>
       <Box
-        // height="100%"
         width="100%"
-        // display="flex"
         textAlign="center"
         alignItems="center"
         justifyContent="center"
@@ -109,20 +117,22 @@ export default function YouTubeVideo({
           <>
             <Box mt={2} mb={5} p={3} bg="#e5e5e5" textAlign="left">
               <Heading as="h5" size="sm" mb={2}>
+                {" "}
                 Description:
               </Heading>
-              <Text fontSize="md">{currentVideo?.desc}</Text>
+              <Text fontSize="md">{currentVideo?.description}</Text>
             </Box>
 
             <Box textAlign="left">
               <Heading as="h3" size="md" mb={2}>
                 Video Transcript
               </Heading>
-              <Text fontSize="md">{currentVideo?.desc}</Text>
-              <Text fontSize="md">{currentVideo?.desc}</Text>
+              <Text fontSize="md">{currentVideo?.description}</Text>
+              <Text fontSize="md">{currentVideo?.description}</Text>
             </Box>
           </>
         )}
+        {console.log("ccccc", currentVideo)}
       </Box>
     </>
   );

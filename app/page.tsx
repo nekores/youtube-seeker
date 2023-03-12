@@ -1,191 +1,132 @@
 "use client";
 
-import YouTubeVideo from "./YouTubeVideo";
 import { useEffect, useState } from "react";
-import VideoListItem from "./VideoListItem";
-import playlist from "./data.json";
-import {
-  Button,
-  Flex,
-  Box,
-  InputGroup,
-  Input,
-  InputRightElement,
-  Grid,
-  GridItem,
-  Heading,
-  Divider,
-  Spinner,
-  Text,
-  useDisclosure,
-} from "@chakra-ui/react";
-import { mediaQueryHook } from "utils/mediaQueryHook";
-import { ModalComp } from "app/components/modal/";
+import { Box, Divider, Flex, Heading, Spinner } from "@chakra-ui/react";
+import axios from "axios";
+
+import { VideoPanel } from "./components/videoPanel/index";
+
+import { useSearchParams } from "next/navigation";
+import SearchButton from "./components/searchButton";
+import { SearchResultsType } from "./types";
 
 export default function Home() {
-  const [displayPlayList, setDisplayPlayList] = useState<boolean>(true);
-  const [currentVideoId, setCurrentVideoId] = useState<string>("");
-  const [currentVideoSeek, setCurrentVideoSeek] = useState<string>("3");
-  const [filterPlaylist, setFilterPlaylist] = useState<Array<Object>>([]);
-  const [searchLoader, setSearchLoader] = useState<Boolean>(false);
-  const [inputSearchVal, setInputSearchVal] = useState<string>("");
-  const [currentVideo, setCurrentVideo] = useState<Object>({});
+  const [loading, setLoading] = useState(true);
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const searchParams = useSearchParams();
+  const [videoList, setVideoList] = useState(Array<SearchResultsType>);
 
-  // console.log(" **** DATA *** ", playlist);
-  const { isMdUp } = mediaQueryHook();
+  var local_searchHistory: string[] = [];
+  if (typeof window !== "undefined") {
+    local_searchHistory = JSON.parse(
+      localStorage.getItem("search_history") || "[]"
+    );
 
-  function showSearchResults(playlist: number) {
-    setDisplayPlayList(true);
-  }
+    console.log(
+      "yyyyy",
+      JSON.parse(localStorage.getItem("search_history") || "[]")
+    );
+  } else local_searchHistory = [];
 
-  function handleOnClick(
-    id: string,
-    seek_time: string,
-    currentVideoo: Object
-  ): void {
-    setCurrentVideoId(id);
-    setCurrentVideo(currentVideoo);
-    setCurrentVideoSeek(seek_time);
-    onOpen();
-    // console.log(" from child", currentVideoo);
+  async function runSearch(query: string) {
+    window.history.pushState({}, "", `/?query=${query}`);
+    local_searchHistory.push(query);
+    local_searchHistory.indexOf(query) === -1
+      ? local_searchHistory.push(query)
+      : null;
+    console.log(
+      "Query",
+      query,
+      " Index ",
+      local_searchHistory.indexOf(query),
+      local_searchHistory
+    );
+
+    if (
+      typeof window !== "undefined" &&
+      JSON.parse(localStorage.getItem("search_history"))?.includes(query) !=
+        true
+    ) {
+      localStorage.setItem(
+        "search_history",
+        JSON.stringify(local_searchHistory)
+      );
+    }
+    const res = await axios.get(
+      `https://b523ymmp62.execute-api.us-east-1.amazonaws.com/launch?q=${query}`
+    );
+    if (res.data.results) {
+      const newArray = [];
+      for (let i = 0; i < res.data.results.length; i++) {
+        const dd =
+          await axios.get(`https://www.googleapis.com/youtube/v3/videos?id=${res.data.results[i]?.video_id}&t=${res.data.results[i]?.offset}&key=AIzaSyD4SATJMYpvr2dyg5oefYDFzlNfId-nKek&part=snippet,contentDetails,status
+
+      `);
+
+        const {
+          id,
+          snippet: { title, description, thumbnails, localized },
+        } = dd?.data?.items[0];
+
+        newArray.push({
+          video_id: id,
+          title,
+          description,
+          thumbnails,
+          localized,
+          schemaTest: dd?.data?.items[0],
+          embeddable: dd?.data?.items[0]?.status?.embeddable,
+        });
+      }
+
+      await setVideoList(newArray);
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
-    setCurrentVideo(playlist[0]);
-    setCurrentVideoId(playlist[0]?.video_id);
-    setFilterPlaylist(playlist);
+    setLoading(true);
+    // Populate the list from history
+
+    const query = searchParams.get("q");
+    if (!query) return;
+
+    runSearch(query);
   }, []);
-
-  const searchFnc = (e: any) => {
-    const input = e.target.value.toLowerCase();
-    if (e.key === "Enter") {
-      searchButtonFnc();
-    } else {
-      setInputSearchVal(input);
-    }
-  };
-  const searchButtonFnc = () => {
-    const playlistFil = playlist?.filter((i) =>
-      i?.title?.toLowerCase().includes(inputSearchVal)
-    );
-    setFilterPlaylist(playlistFil);
-    setSearchLoader(playlistFil.length != playlist.length);
-  };
-
-  const timeOut = () => {
-    return (
-      <Box
-        height="100%"
-        width="100%"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Spinner
-          thickness="4px"
-          speed="0.55s"
-          emptyColor="gray.200"
-          color="red.500"
-          size="xl"
-        />
-      </Box>
-    );
-  };
 
   return (
     <>
-      <Box m={2} overflow="hidden" height="100%">
+      <Box m="2" overflow="hidden" height="100%">
         <Flex minWidth="max-content" alignItems="center" gap="2">
           <Box p="2" display="flex" justifyContent="center" width="100%">
-            <Heading size="md">Hello Youtube Seek!</Heading>
+            <Heading size="md">Hello My Search App!</Heading>
           </Box>
         </Flex>
-      </Box>
 
-      <Divider orientation="horizontal" mb={0} />
+        <Divider orientation="horizontal" mb={0} />
+        <SearchButton runSearch={runSearch} />
 
-      <Grid templateColumns="repeat(12, 1fr)" gap={2} m={5}>
-        <GridItem colSpan={[12, 12, 12, 12, 6, 7]}>
-          {isMdUp ? (
-            <YouTubeVideo
-              video_id={currentVideoId}
-              currentVideo={currentVideo}
-              seek_time={currentVideoSeek}
+        {loading ? (
+          <Box
+            height="100%"
+            width="100%"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            mt={10}
+          >
+            <Spinner
+              thickness="4px"
+              speed="0.55s"
+              emptyColor="gray.200"
+              color="red.500"
+              size="xl"
             />
-          ) : (
-            <ModalComp isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
-              <YouTubeVideo
-                video_id={currentVideoId}
-                currentVideo={currentVideo}
-                seek_time={currentVideoSeek}
-              />
-            </ModalComp>
-          )}
-        </GridItem>
-
-        <GridItem colSpan={[12, 12, 12, 12, 6, 5]}>
-          <Box maxW={"100%"} margin="auto" mb={2}>
-            <InputGroup size="md">
-              <Input
-                pr="4.5rem"
-                placeholder="Search the video..."
-                onChange={searchFnc}
-                onKeyDown={searchFnc}
-              />
-              <InputRightElement width="4.5rem" mr={1.5}>
-                <Button h="1.75rem" size="sm" onClick={searchButtonFnc}>
-                  Search
-                </Button>
-              </InputRightElement>
-            </InputGroup>
-            {searchLoader ? (
-              <Box
-                fontSize="md"
-                m="0"
-                marginLeft={2}
-                marginTop="2"
-                display="flex"
-                alignItems="center"
-              >
-                <Text
-                  fontSize="md"
-                  m="0"
-                  marginLeft={2}
-                  marginTop="2"
-                  bg="#38a169"
-                  padding="2px 8px"
-                  borderRadius={4}
-                  color="white"
-                >
-                  {filterPlaylist.length}
-                </Text>
-                <Text fontSize="md" m="0" marginLeft={2} marginTop="2">
-                  matching videos found!
-                </Text>
-              </Box>
-            ) : null}
           </Box>
-
-          <Box className="video-responsive" maxH={"100vh"} overflow="auto">
-            {displayPlayList && filterPlaylist?.length > 0
-              ? filterPlaylist?.map((playlistId: any) => {
-                  return (
-                    <VideoListItem
-                      key={playlistId.video_id}
-                      video_id={playlistId.video_id}
-                      seek_time={playlistId.seek_time}
-                      handleOnClick={handleOnClick}
-                      currentVideo={playlistId}
-                      isActive={currentVideoId == playlistId.video_id}
-                    />
-                  );
-                })
-              : timeOut()}
-          </Box>
-        </GridItem>
-      </Grid>
+        ) : (
+          <VideoPanel videoList={videoList} />
+        )}
+      </Box>
     </>
   );
 }
